@@ -498,7 +498,6 @@ jobs:
           command: yarn test-build-prod --maxWorkers=2
 
 workflows:
-  version: 2
   stable:
     jobs:
       - setup
