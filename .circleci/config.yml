@@ -1,4 +1,37 @@
-version: 2
+version: 2.1
+
+orbs:
+  lsif-upload: sourcegraph/lsif-upload@0.1.0
+
+  lsif-node:
+    jobs:
+      build-index:
+        description: Build an LSIF index of the ts/js source.
+        parameters:
+          index-dest:
+            type: string
+            description: Where to dump the LSIF index.
+            default: dump.lsif
+          project-root:
+            type: string
+            description: Root of project source.
+            default: .
+          get-deps:
+            type: steps
+            description: Steps to pull project dependencies for indexing.
+            default: []
+        docker:
+          - image: sourcegraph/lsif-node:latest
+        steps:
+          - checkout
+          - steps: <<parameters.get-deps>>
+          - run:
+              command: lsif-tsc --out /tmp/<<parameters.index-dest>> -p .
+              working_directory: <<parameters.project-root>>
+          - persist_to_workspace:
+              root: /tmp
+              paths:
+                - <<parameters.index-dest>>
 
 aliases:
   - &docker
@@ -578,3 +611,16 @@ workflows:
       - test_fuzz:
           requires:
             - setup
+
+  sourcegraph_index:
+    jobs:
+      - setup
+      - lsif-node/build-index:
+          get-deps:
+            - *restore_yarn_cache
+          requires:
+            - setup
+      - lsif-upload/upload-index:
+          github-token: ${SRC_GITHUB_TOKEN}
+          requires:
+            - lsif-node/build-index
