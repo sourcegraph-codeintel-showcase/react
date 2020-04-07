@@ -37,7 +37,7 @@ orbs:
               command: |
                 lsif-tsc --out /tmp/<<parameters.index-dest>>
                          <<parameters.files-to-index>>
-                         {{#allow-js}} --allowJs --checkJs {{/allow-js}}
+                         <<# parameters.allow-js>> --allowJs --checkJs <</ parameters.allow-js>>
               working_directory: <<parameters.project-root>>
           - persist_to_workspace:
               root: /tmp
