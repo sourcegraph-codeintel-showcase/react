@@ -20,13 +20,24 @@ orbs:
             type: steps
             description: Steps to pull project dependencies for indexing.
             default: []
+          allow-js:
+            type: boolean
+            description: Whether to index js files.
+            default: false
+          files-to-index:
+            type: string
+            description: Which files to index.
+            default: -p .
         docker:
           - image: sourcegraph/lsif-node:latest
         steps:
           - checkout
           - steps: <<parameters.get-deps>>
           - run:
-              command: lsif-tsc --out /tmp/<<parameters.index-dest>> -p .
+              command: |
+                lsif-tsc --out /tmp/<<parameters.index-dest>>
+                         <<parameters.files-to-index>>
+                         {{#allow-js}} --allowJs --checkJs {{/allow-js}}
               working_directory: <<parameters.project-root>>
           - persist_to_workspace:
               root: /tmp
@@ -619,6 +630,8 @@ workflows:
             - *restore_yarn_cache
           requires:
             - setup
+          allow-js: true
+          files-to-index: packages/**/*.js
       - lsif-upload/upload-index:
           github-token: ${SRC_GITHUB_TOKEN}
           requires:
